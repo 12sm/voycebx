@@ -5,15 +5,16 @@ body { height: 100%; overflow: hidden; }
 
 /* ─── Custom Properties ─────────────────────────────────────────────────── */
 :root {
-  --bg:          #0f111a;
-  --surface:     #161929;
-  --surface2:    #1e2238;
-  --border:      #2c3050;
+  /* Dark theme (default) */
+  --bg:          #0f1117;
+  --surface:     #161820;
+  --surface2:    #1d2030;
+  --border:      #2a2e42;
   --text:        #dde1f0;
-  --muted:       #7b85a8;
-  --accent:      #7b8cde;
-  --accent-dim:  rgba(123, 140, 222, 0.12);
-  --accent-ring: rgba(123, 140, 222, 0.35);
+  --muted:       #7a84a6;
+  --accent:      #4ecdc4;
+  --accent-dim:  rgba(78, 205, 196, 0.12);
+  --accent-ring: rgba(78, 205, 196, 0.32);
   --danger:      #e05c6b;
   --success:     #48b07f;
   --radius:      12px;
@@ -23,6 +24,21 @@ body { height: 100%; overflow: hidden; }
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
   --sar: env(safe-area-inset-right, 0px);
+}
+
+/* ─── Light Theme ────────────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg:          #f2f4f9;
+  --surface:     #ffffff;
+  --surface2:    #eaecf5;
+  --border:      #d8dbec;
+  --text:        #1b1e2e;
+  --muted:       #6b7399;
+  --accent:      #2a9d8f;
+  --accent-dim:  rgba(42, 157, 143, 0.10);
+  --accent-ring: rgba(42, 157, 143, 0.28);
+  --danger:      #c0392b;
+  --success:     #1f7a52;
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────── */
@@ -68,12 +84,24 @@ body {
   color: var(--text);
 }
 
-.app-title .voice-label {
+.voice-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
   color: var(--accent);
-  font-weight: 400;
   font-size: 13px;
+  font-weight: 400;
   margin-left: 8px;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 6px;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
 }
+.voice-picker-btn:active { background: var(--accent-dim); }
 
 /* ─── Buttons ────────────────────────────────────────────────────────────── */
 .btn {
@@ -632,6 +660,36 @@ body {
   0%, 100% { height: 6px; }
   50%       { height: 20px; }
 }
+
+/* ─── Voice Picker ───────────────────────────────────────────────────────── */
+.voice-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+  margin-bottom: 8px;
+}
+.voice-item:active { background: var(--accent-dim); border-color: var(--accent); }
+.voice-item-active { border-color: var(--accent); background: var(--accent-dim); }
+
+.voice-item-info { flex: 1; min-width: 0; }
+.voice-item-name { font-size: 16px; font-weight: 500; color: var(--text); }
+.voice-item-meta {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: capitalize;
+  margin-top: 2px;
+}
+.voice-item-check { color: var(--accent); flex-shrink: 0; }
 
 /* ─── Utilities ──────────────────────────────────────────────────────────── */
 .hidden   { display: none !important; }

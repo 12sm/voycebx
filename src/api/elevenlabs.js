@@ -50,6 +50,20 @@ export async function cloneVoice(apiKey, audioBlob, name = 'My Voice') {
   return data.voice_id
 }
 
+export async function listVoices(apiKey) {
+  const res = await fetch(`${BASE}/voices`, {
+    headers: authHeaders(apiKey),
+  })
+  if (!res.ok) throw new Error(`Could not load voice library (${res.status})`)
+  const data = await res.json()
+  // Sort cloned voices first, then by name
+  return (data.voices || []).sort((a, b) => {
+    if (a.category === 'cloned' && b.category !== 'cloned') return -1
+    if (b.category === 'cloned' && a.category !== 'cloned') return 1
+    return a.name.localeCompare(b.name)
+  })
+}
+
 export async function textToSpeech(apiKey, voiceId, text) {
   const res = await fetch(`${BASE}/text-to-speech/${voiceId}`, {
     method: 'POST',

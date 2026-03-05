@@ -54,3 +54,10 @@ export function saveTranscript(entries) {
 export function clearTranscript() {
   localStorage.removeItem(K.transcript)
 }
+
+export function getTheme() { return localStorage.getItem('voycebx:theme') || 'dark' }
+export function setTheme(v) { localStorage.setItem('voycebx:theme', v) }
+
+export function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme)
+}

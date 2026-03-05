@@ -1,9 +1,10 @@
 import {
-  getApiKey, getVoiceId, getVoiceName,
+  getApiKey, getVoiceId, getVoiceName, setVoiceId, setVoiceName,
   getFavorites, setFavorites,
   getTranscript, saveTranscript, clearTranscript,
+  getTheme, setTheme, applyTheme,
 } from '../store.js'
-import { textToSpeech } from '../api/elevenlabs.js'
+import { textToSpeech, listVoices } from '../api/elevenlabs.js'
 
 function esc(str) {
   return String(str)
@@ -69,9 +70,13 @@ export function mountSpeak(container, onSetup) {
     <header class="app-header">
       <span class="app-title">
         VoyceBx
-        <span class="voice-label" id="voice-label">${esc(getVoiceName())}</span>
+        <button class="voice-picker-btn" id="btn-voice-picker" title="Switch voice">
+          <span id="voice-label">${esc(getVoiceName())}</span>
+          ${ICON_CHEVRON}
+        </button>
       </span>
       <div style="display:flex;gap:4px;align-items:center">
+        <button class="btn-icon" id="btn-theme" title="Toggle theme">${ICON_SUN}</button>
         <button class="btn-icon" id="btn-clear" title="Clear transcript">${ICON_TRASH}</button>
         <button class="btn-icon" id="btn-settings" title="Settings">${ICON_SETTINGS}</button>
       </div>
@@ -118,9 +123,11 @@ export function mountSpeak(container, onSetup) {
   const btnSend      = view.querySelector('#btn-send')
   const errorBanner  = view.querySelector('#error-banner')
   const errorText    = view.querySelector('#error-text')
-  const btnEditFavs  = view.querySelector('#btn-edit-favs')
-  const btnSettings  = view.querySelector('#btn-settings')
-  const btnClear     = view.querySelector('#btn-clear')
+  const btnEditFavs    = view.querySelector('#btn-edit-favs')
+  const btnSettings    = view.querySelector('#btn-settings')
+  const btnClear       = view.querySelector('#btn-clear')
+  const btnTheme       = view.querySelector('#btn-theme')
+  const btnVoicePicker = view.querySelector('#btn-voice-picker')
 
   // ── Initial render ────────────────────────────────────────────────────────
   renderFavorites()
@@ -128,6 +135,17 @@ export function mountSpeak(container, onSetup) {
 
   // ── Events ────────────────────────────────────────────────────────────────
   btnSettings.addEventListener('click', onSetup)
+
+  btnTheme.addEventListener('click', () => {
+    const next = getTheme() === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    applyTheme(next)
+    btnTheme.innerHTML = next === 'dark' ? ICON_SUN : ICON_MOON
+  })
+  // Set correct icon for current theme
+  btnTheme.innerHTML = getTheme() === 'dark' ? ICON_SUN : ICON_MOON
+
+  btnVoicePicker.addEventListener('click', () => openVoicePickerModal())
 
   btnClear.addEventListener('click', () => {
     if (!confirm('Clear all spoken text from the screen?')) return
@@ -331,6 +349,63 @@ export function mountSpeak(container, onSetup) {
     ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'
   }
 
+  // ── Voice picker modal ────────────────────────────────────────────────────
+  async function openVoicePickerModal() {
+    const overlay = document.createElement('div')
+    overlay.className = 'modal-overlay'
+    overlay.innerHTML = `
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title">Your Voices</span>
+          <button class="btn-icon" id="vp-close">${ICON_CLOSE}</button>
+        </div>
+        <div class="modal-body" id="vp-body">
+          <div style="padding:24px;text-align:center;color:var(--muted);font-size:14px">
+            Loading your voice library…
+          </div>
+        </div>
+      </div>
+    `
+    document.body.appendChild(overlay)
+
+    const body = overlay.querySelector('#vp-body')
+    overlay.querySelector('#vp-close').addEventListener('click', () => overlay.remove())
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove() })
+
+    try {
+      const voices = await listVoices(getApiKey())
+      const currentId = getVoiceId()
+
+      if (!voices.length) {
+        body.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:14px">No voices found in your ElevenLabs library.</div>`
+        return
+      }
+
+      body.innerHTML = ''
+      voices.forEach(v => {
+        const active = v.voice_id === currentId
+        const item = document.createElement('button')
+        item.className = 'voice-item' + (active ? ' voice-item-active' : '')
+        item.innerHTML = `
+          <div class="voice-item-info">
+            <div class="voice-item-name">${esc(v.name)}</div>
+            <div class="voice-item-meta">${esc(v.category || 'library')}</div>
+          </div>
+          ${active ? `<span class="voice-item-check">${ICON_CHECK}</span>` : ''}
+        `
+        item.addEventListener('click', () => {
+          setVoiceId(v.voice_id)
+          setVoiceName(v.name)
+          view.querySelector('#voice-label').textContent = v.name
+          overlay.remove()
+        })
+        body.appendChild(item)
+      })
+    } catch (err) {
+      body.innerHTML = `<div class="status status-error" style="margin:12px">${esc(err.message)}</div>`
+    }
+  }
+
   // ── Favorites modal ───────────────────────────────────────────────────────
   function openFavModal() {
     let draft = [...favorites]
@@ -429,4 +504,28 @@ const ICON_TRASH = `<svg width="18" height="18" fill="none" stroke="currentColor
   <path d="M10 11v6"/>
   <path d="M14 11v6"/>
   <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+</svg>`
+
+const ICON_SUN = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+  <circle cx="12" cy="12" r="5"/>
+  <line x1="12" y1="1" x2="12" y2="3"/>
+  <line x1="12" y1="21" x2="12" y2="23"/>
+  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+  <line x1="1" y1="12" x2="3" y2="12"/>
+  <line x1="21" y1="12" x2="23" y2="12"/>
+  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+</svg>`
+
+const ICON_MOON = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+</svg>`
+
+const ICON_CHEVRON = `<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+  <polyline points="6 9 12 15 18 9"/>
+</svg>`
+
+const ICON_CHECK = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+  <polyline points="20 6 9 17 4 12"/>
 </svg>`

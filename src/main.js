@@ -1,5 +1,8 @@
 import './style.css'
-import { getApiKey, getVoiceId } from './store.js'
+import { getApiKey, getVoiceId, getTheme, applyTheme } from './store.js'
+
+// Apply saved theme before first render
+applyTheme(getTheme())
 import { mountSetup } from './views/setup.js'
 import { mountSpeak } from './views/speak.js'
 
