@@ -88,7 +88,7 @@ export function mountSetup(container, onComplete) {
         type="password"
         class="input"
         id="api-key-input"
-        placeholder="xi-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        placeholder="sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         value="${esc(apiKey)}"
         autocomplete="off"
         autocorrect="off"
@@ -121,7 +121,7 @@ export function mountSetup(container, onComplete) {
 
       try {
         const valid = await testApiKey(key)
-        if (!valid) throw new Error('Key not recognized. Check that it starts with "xi-".')
+        if (!valid) throw new Error('Key not recognized. Check that it starts with "sk_".')
         apiKey = key
         setApiKey(key)
         step = 2
