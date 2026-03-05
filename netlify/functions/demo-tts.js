@@ -1,6 +1,6 @@
 const DEMO_VOICE_ID = process.env.DEMO_VOICE_ID || '21m00Tcm4TlvDq8ikWAM' // ElevenLabs "Rachel"
 const API_KEY       = process.env.ELEVENLABS_API_KEY
-const DEMO_LIMIT    = parseInt(process.env.DEMO_LIMIT || '10', 10)
+const DEMO_LIMIT    = parseInt(process.env.DEMO_LIMIT || '50', 10)
 const MAX_CHARS     = 300
 
 export const handler = async (event) => {

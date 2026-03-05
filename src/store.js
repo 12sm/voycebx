@@ -62,7 +62,7 @@ export function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme)
 }
 
-const DEMO_LIMIT = 10
+const DEMO_LIMIT = 50
 
 export function isDemoMode()   { return localStorage.getItem('voycebx:demo') === 'true' }
 export function setDemoMode(v) { localStorage.setItem('voycebx:demo', v ? 'true' : 'false') }
