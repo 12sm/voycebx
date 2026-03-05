@@ -1,5 +1,5 @@
 import './style.css'
-import { getApiKey, getVoiceId, getTheme, applyTheme } from './store.js'
+import { getApiKey, getVoiceId, getTheme, applyTheme, isDemoMode } from './store.js'
 
 // Apply saved theme before first render
 applyTheme(getTheme())
@@ -11,7 +11,7 @@ const app = document.getElementById('app')
 function route() {
   app.innerHTML = ''
 
-  const hasConfig = getApiKey() && getVoiceId()
+  const hasConfig = (getApiKey() && getVoiceId()) || isDemoMode()
 
   if (!hasConfig || location.hash === '#setup') {
     mountSetup(app, () => {

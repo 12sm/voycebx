@@ -61,3 +61,19 @@ export function setTheme(v) { localStorage.setItem('voycebx:theme', v) }
 export function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme)
 }
+
+const DEMO_LIMIT = 10
+
+export function isDemoMode()   { return localStorage.getItem('voycebx:demo') === 'true' }
+export function setDemoMode(v) { localStorage.setItem('voycebx:demo', v ? 'true' : 'false') }
+export function getDemoUsage() { return parseInt(localStorage.getItem('voycebx:demoUsage') || '0', 10) }
+export function getDemoLimit() { return DEMO_LIMIT }
+export function incrementDemoUsage() {
+  const next = getDemoUsage() + 1
+  localStorage.setItem('voycebx:demoUsage', String(next))
+  return next
+}
+export function exitDemoMode() {
+  localStorage.removeItem('voycebx:demo')
+  localStorage.removeItem('voycebx:demoUsage')
+}

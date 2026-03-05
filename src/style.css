@@ -661,6 +661,43 @@ body {
   50%       { height: 20px; }
 }
 
+/* ─── Demo Banner ────────────────────────────────────────────────────────── */
+.demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 16px;
+  background: var(--accent-dim);
+  border-bottom: 1px solid var(--accent-ring);
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.demo-banner-over {
+  background: rgba(224, 92, 107, 0.08);
+  border-color: rgba(224, 92, 107, 0.25);
+  color: var(--text);
+}
+
+.demo-banner-cta {
+  background: none;
+  border: 1px solid var(--accent-ring);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: inherit;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.demo-banner-cta:active { background: var(--accent-dim); }
+.demo-banner-over .demo-banner-cta { border-color: rgba(224,92,107,0.4); color: var(--danger); }
+
 /* ─── Voice Picker ───────────────────────────────────────────────────────── */
 .voice-item {
   width: 100%;

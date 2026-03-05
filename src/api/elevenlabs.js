@@ -50,6 +50,19 @@ export async function cloneVoice(apiKey, audioBlob, name = 'My Voice') {
   return data.voice_id
 }
 
+export async function demoTextToSpeech(text, usageCount) {
+  const res = await fetch('/api/demo-tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, usageCount }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.error || `Demo failed (${res.status})`)
+  }
+  return res.arrayBuffer()
+}
+
 export async function listVoices(apiKey) {
   const res = await fetch(`${BASE}/voices`, {
     headers: authHeaders(apiKey),

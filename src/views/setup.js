@@ -1,4 +1,4 @@
-import { getApiKey, setApiKey, getVoiceId, getVoiceName, setVoiceId, setVoiceName } from '../store.js'
+import { getApiKey, setApiKey, getVoiceId, getVoiceName, setVoiceId, setVoiceName, setDemoMode, exitDemoMode } from '../store.js'
 import { testApiKey, cloneVoice, listVoices } from '../api/elevenlabs.js'
 
 // The Rainbow Passage — standard clinical voice sample used by SLPs
@@ -125,13 +125,17 @@ export function mountSetup(container, onComplete) {
         <button class="step-link" id="btn-skip" style="background:none;border:none;cursor:pointer;font-family:inherit">
           Skip — I already have voices in my library
         </button>
+        <button class="step-link" id="btn-demo" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--muted)">
+          Try a demo without an account
+        </button>
       </div>
     `
 
-    const input   = el.querySelector('#api-key-input')
-    const btn     = el.querySelector('#btn-verify')
-    const btnSkip = el.querySelector('#btn-skip')
-    const status  = el.querySelector('#step1-status')
+    const input    = el.querySelector('#api-key-input')
+    const btn      = el.querySelector('#btn-verify')
+    const btnSkip  = el.querySelector('#btn-skip')
+    const btnDemo  = el.querySelector('#btn-demo')
+    const status   = el.querySelector('#step1-status')
 
     input.focus()
     input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click() })
@@ -165,6 +169,12 @@ export function mountSetup(container, onComplete) {
       const key = input.value.trim()
       if (!key) { showStatus(status, 'error', 'Enter your API key first.'); return }
       saveAndProceed(key, 'pick')
+    })
+
+    btnDemo.addEventListener('click', () => {
+      exitDemoMode() // reset usage counter on fresh demo start
+      setDemoMode(true)
+      onComplete()
     })
   }
 

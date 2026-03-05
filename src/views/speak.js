@@ -3,8 +3,9 @@ import {
   getFavorites, setFavorites,
   getTranscript, saveTranscript, clearTranscript,
   getTheme, setTheme, applyTheme,
+  isDemoMode, getDemoUsage, getDemoLimit, incrementDemoUsage, exitDemoMode,
 } from '../store.js'
-import { textToSpeech, listVoices } from '../api/elevenlabs.js'
+import { textToSpeech, demoTextToSpeech, listVoices } from '../api/elevenlabs.js'
 
 function esc(str) {
   return String(str)
@@ -58,10 +59,11 @@ async function playBuffer(arrayBuffer) {
 
 export function mountSpeak(container, onSetup) {
   // ── State ─────────────────────────────────────────────────────────────────
-  let transcript = getTranscript()   // [{ id, text, timestamp }]
+  const demo     = isDemoMode()
+  let transcript = getTranscript()
   let favorites  = getFavorites()
-  let sending    = false             // true while TTS is in flight / playing
-  let playingId  = null              // entry currently playing
+  let sending    = false
+  let playingId  = null
 
   // ── Build DOM ─────────────────────────────────────────────────────────────
   const view = document.createElement('div')
@@ -86,6 +88,12 @@ export function mountSpeak(container, onSetup) {
       <div class="favorites-scroll" id="fav-scroll"></div>
       <button class="btn-icon" id="btn-edit-favs" title="Edit favorites">${ICON_EDIT}</button>
     </div>
+
+    ${demo ? `
+    <div class="demo-banner" id="demo-banner">
+      <span id="demo-banner-text"></span>
+      <button class="demo-banner-cta" id="btn-demo-upgrade">Add your key &rarr;</button>
+    </div>` : ''}
 
     <div class="speaking-bar hidden" id="speaking-bar">
       <div class="wave-bar"></div>
@@ -132,9 +140,17 @@ export function mountSpeak(container, onSetup) {
   // ── Initial render ────────────────────────────────────────────────────────
   renderFavorites()
   renderTranscript()
+  if (demo) updateDemoBanner()
 
   // ── Events ────────────────────────────────────────────────────────────────
   btnSettings.addEventListener('click', onSetup)
+
+  if (demo) {
+    view.querySelector('#btn-demo-upgrade')?.addEventListener('click', () => {
+      exitDemoMode()
+      onSetup()
+    })
+  }
 
   btnTheme.addEventListener('click', () => {
     const next = getTheme() === 'dark' ? 'light' : 'dark'
@@ -203,9 +219,17 @@ export function mountSpeak(container, onSetup) {
     setEntryPlaying(entry.id, true)
 
     try {
-      const apiKey  = getApiKey()
-      const voiceId = getVoiceId()
-      const buffer  = await textToSpeech(apiKey, voiceId, text)
+      let buffer
+      if (demo) {
+        const usage = getDemoUsage()
+        buffer = await demoTextToSpeech(text, usage)
+        const next = incrementDemoUsage()
+        updateDemoBanner(next)
+      } else {
+        const apiKey  = getApiKey()
+        const voiceId = getVoiceId()
+        buffer = await textToSpeech(apiKey, voiceId, text)
+      }
 
       // Clone before caching — playBuffer consumes the buffer
       audioCache.set(entry.id, buffer.slice(0))
@@ -329,6 +353,23 @@ export function mountSpeak(container, onSetup) {
   }
 
   // ── UI state helpers ──────────────────────────────────────────────────────
+  function updateDemoBanner(usage = getDemoUsage()) {
+    const bannerText = view.querySelector('#demo-banner-text')
+    const banner     = view.querySelector('#demo-banner')
+    const limit      = getDemoLimit()
+    if (!bannerText || !banner) return
+
+    if (usage >= limit) {
+      bannerText.textContent = 'Demo complete — add your ElevenLabs key to keep speaking in your own voice.'
+      textarea.disabled = true
+      btnSend.disabled  = true
+      banner.classList.add('demo-banner-over')
+    } else {
+      const remaining = limit - usage
+      bannerText.textContent = `Demo · ${remaining} of ${limit} uses remaining · sample voice only`
+    }
+  }
+
   function setSendingUI(active) {
     speakingBar.classList.toggle('hidden', !active)
     btnSend.style.background = active ? 'var(--muted)' : ''
