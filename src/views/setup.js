@@ -20,7 +20,8 @@ function fmtTime(secs) {
 
 export function mountSetup(container, onComplete) {
   // ── State ────────────────────────────────────────────────────────────────
-  let step        = 1
+  // If already configured, start at welcome screen instead of step 1
+  let step        = (getApiKey() && getVoiceId()) ? 0 : 1
   let apiKey      = getApiKey()
   let voiceName   = getVoiceName()
   let audioBlob   = null
@@ -54,25 +55,44 @@ export function mountSetup(container, onComplete) {
     logo.innerHTML = `<h1>VoyceBx</h1><p>Vocal continuity for life's most important moments</p>`
     inner.appendChild(logo)
 
-    // Progress dots
-    const dots = document.createElement('div')
-    dots.className = 'progress-dots'
-    for (let i = 1; i <= 3; i++) {
-      const d = document.createElement('div')
-      d.className = `dot${i === step ? ' active' : ''}`
-      dots.appendChild(d)
+    // Progress dots — only shown during the wizard, not on welcome-back screen
+    if (step > 0) {
+      const dots = document.createElement('div')
+      dots.className = 'progress-dots'
+      for (let i = 1; i <= 3; i++) {
+        const d = document.createElement('div')
+        d.className = `dot${i === step ? ' active' : ''}`
+        dots.appendChild(d)
+      }
+      inner.appendChild(dots)
     }
-    inner.appendChild(dots)
 
     // Step content
     const stepEl = document.createElement('div')
     stepEl.className = 'setup-step'
     inner.appendChild(stepEl)
 
-    if (step === 1) renderApiKey(stepEl)
+    if (step === 0) renderWelcomeBack(stepEl)
+    else if (step === 1) renderApiKey(stepEl)
     else if (step === 2) renderRecord(stepEl)
     else if (step === 3) renderClone(stepEl)
     else if (step === 4) renderDone(stepEl)
+  }
+
+  // ── Step 0: Welcome back ─────────────────────────────────────────────────
+  function renderWelcomeBack(el) {
+    el.innerHTML = `
+      <div class="step-title">Welcome back</div>
+      <p class="step-body">
+        Your voice <strong>${esc(getVoiceName())}</strong> is ready to use.
+      </p>
+      <button class="btn btn-primary" id="btn-continue">Continue Speaking</button>
+      <button class="btn btn-secondary" id="btn-new-voice">Record a New Voice</button>
+      <button class="btn btn-ghost" id="btn-change-key">Change API Key</button>
+    `
+    el.querySelector('#btn-continue').addEventListener('click', onComplete)
+    el.querySelector('#btn-new-voice').addEventListener('click', () => { step = 2; render() })
+    el.querySelector('#btn-change-key').addEventListener('click', () => { step = 1; render() })
   }
 
   // ── Step 1: API Key ──────────────────────────────────────────────────────
