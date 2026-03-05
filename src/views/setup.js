@@ -1,5 +1,5 @@
 import { getApiKey, setApiKey, getVoiceId, getVoiceName, setVoiceId, setVoiceName } from '../store.js'
-import { testApiKey, cloneVoice } from '../api/elevenlabs.js'
+import { testApiKey, cloneVoice, listVoices } from '../api/elevenlabs.js'
 
 // The Rainbow Passage — standard clinical voice sample used by SLPs
 const SAMPLE_PASSAGE = `When the sunlight strikes raindrops in the air, they act as a prism and form a rainbow. The rainbow is a division of white light into many beautiful colors. These take the shape of a long round arch, with its path high above, and its two ends apparently beyond the horizon. There is, according to legend, a boiling pot of gold at one end. People look, but no one ever finds it. When a man looks for something beyond his reach, his friends say he is looking for the pot of gold at the end of the rainbow.`
@@ -77,6 +77,7 @@ export function mountSetup(container, onComplete) {
     else if (step === 2) renderRecord(stepEl)
     else if (step === 3) renderClone(stepEl)
     else if (step === 4) renderDone(stepEl)
+    else if (step === 'pick') renderPickVoice(stepEl)
   }
 
   // ── Step 0: Welcome back ─────────────────────────────────────────────────
@@ -117,39 +118,53 @@ export function mountSetup(container, onComplete) {
       />
       <div id="step1-status"></div>
       <button class="btn btn-primary" id="btn-verify">Verify &amp; Continue</button>
-      <div class="text-center">
+      <div class="text-center" style="display:flex;flex-direction:column;gap:8px;align-items:center">
         <a href="https://elevenlabs.io" target="_blank" class="step-link">
           Create an ElevenLabs account →
         </a>
+        <button class="step-link" id="btn-skip" style="background:none;border:none;cursor:pointer;font-family:inherit">
+          Skip — I already have voices in my library
+        </button>
       </div>
     `
 
-    const input  = el.querySelector('#api-key-input')
-    const btn    = el.querySelector('#btn-verify')
-    const status = el.querySelector('#step1-status')
+    const input   = el.querySelector('#api-key-input')
+    const btn     = el.querySelector('#btn-verify')
+    const btnSkip = el.querySelector('#btn-skip')
+    const status  = el.querySelector('#step1-status')
 
     input.focus()
     input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click() })
 
-    btn.addEventListener('click', async () => {
-      const key = input.value.trim()
-      if (!key) { showStatus(status, 'error', 'Please enter your API key.'); return }
-
+    async function saveAndProceed(key, nextStep) {
       btn.disabled = true
+      btnSkip.disabled = true
       btn.textContent = 'Verifying…'
       clearStatus(status)
-
       try {
         await testApiKey(key)
         apiKey = key
         setApiKey(key)
-        step = 2
+        step = nextStep
         render()
       } catch (err) {
         showStatus(status, 'error', err.message)
         btn.disabled = false
+        btnSkip.disabled = false
         btn.textContent = 'Verify & Continue'
       }
+    }
+
+    btn.addEventListener('click', () => {
+      const key = input.value.trim()
+      if (!key) { showStatus(status, 'error', 'Please enter your API key.'); return }
+      saveAndProceed(key, 2)
+    })
+
+    btnSkip.addEventListener('click', () => {
+      const key = input.value.trim()
+      if (!key) { showStatus(status, 'error', 'Enter your API key first.'); return }
+      saveAndProceed(key, 'pick')
     })
   }
 
@@ -315,6 +330,55 @@ export function mountSetup(container, onComplete) {
         cloneBtn.textContent = 'Create Voice Clone'
       }
     })
+  }
+
+  // ── Step 'pick': Pick from existing library ──────────────────────────────
+  async function renderPickVoice(el) {
+    el.innerHTML = `
+      <div class="step-title">Choose a voice</div>
+      <p class="step-body">Select a voice from your ElevenLabs library.</p>
+      <div id="pick-list">
+        <div style="padding:24px 0;text-align:center;color:var(--muted);font-size:14px">
+          Loading your voice library…
+        </div>
+      </div>
+      <div id="pick-status"></div>
+    `
+
+    const listEl  = el.querySelector('#pick-list')
+    const status  = el.querySelector('#pick-status')
+
+    try {
+      const voices = await listVoices(apiKey)
+
+      if (!voices.length) {
+        listEl.innerHTML = `<div class="status status-info">No voices found in your library. Go back and record one.</div>`
+        return
+      }
+
+      listEl.innerHTML = ''
+      voices.forEach(v => {
+        const item = document.createElement('button')
+        item.className = 'voice-item'
+        item.style.marginBottom = '8px'
+        item.innerHTML = `
+          <div class="voice-item-info">
+            <div class="voice-item-name">${esc(v.name)}</div>
+            <div class="voice-item-meta">${esc(v.category || 'library')}</div>
+          </div>
+        `
+        item.addEventListener('click', () => {
+          setVoiceId(v.voice_id)
+          setVoiceName(v.name)
+          voiceName = v.name
+          step = 4
+          render()
+        })
+        listEl.appendChild(item)
+      })
+    } catch (err) {
+      showStatus(status, 'error', err.message)
+    }
   }
 
   // ── Step 4: Done ─────────────────────────────────────────────────────────
