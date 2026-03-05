@@ -1,18 +1,18 @@
 const BASE = 'https://api.elevenlabs.io/v1'
 
-// ElevenLabs accepts both xi-api-key (legacy) and Authorization: Bearer (sk_ keys)
 function authHeaders(apiKey) {
-  return {
-    'xi-api-key': apiKey,
-    'Authorization': `Bearer ${apiKey}`,
-  }
+  return { 'xi-api-key': apiKey }
 }
 
 export async function testApiKey(apiKey) {
   const res = await fetch(`${BASE}/user`, {
     headers: authHeaders(apiKey),
   })
-  if (!res.ok) throw new Error(`Key rejected by ElevenLabs (${res.status})`)
+  if (!res.ok) {
+    let detail = ''
+    try { const d = await res.json(); detail = d.detail?.message || d.detail || '' } catch {}
+    throw new Error(`ElevenLabs rejected the key (${res.status}${detail ? ': ' + detail : ''}). Double-check it was copied in full.`)
+  }
   return true
 }
 
@@ -54,7 +54,7 @@ export async function textToSpeech(apiKey, voiceId, text) {
   const res = await fetch(`${BASE}/text-to-speech/${voiceId}`, {
     method: 'POST',
     headers: {
-      ...authHeaders(apiKey),
+      'xi-api-key': apiKey,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
