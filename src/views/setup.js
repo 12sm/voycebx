@@ -120,8 +120,7 @@ export function mountSetup(container, onComplete) {
       clearStatus(status)
 
       try {
-        const valid = await testApiKey(key)
-        if (!valid) throw new Error('Key not recognized. Check that it starts with "sk_".')
+        await testApiKey(key)
         apiKey = key
         setApiKey(key)
         step = 2

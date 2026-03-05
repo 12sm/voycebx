@@ -1,10 +1,19 @@
 const BASE = 'https://api.elevenlabs.io/v1'
 
+// ElevenLabs accepts both xi-api-key (legacy) and Authorization: Bearer (sk_ keys)
+function authHeaders(apiKey) {
+  return {
+    'xi-api-key': apiKey,
+    'Authorization': `Bearer ${apiKey}`,
+  }
+}
+
 export async function testApiKey(apiKey) {
   const res = await fetch(`${BASE}/user`, {
-    headers: { 'xi-api-key': apiKey },
+    headers: authHeaders(apiKey),
   })
-  return res.ok
+  if (!res.ok) throw new Error(`Key rejected by ElevenLabs (${res.status})`)
+  return true
 }
 
 export async function cloneVoice(apiKey, audioBlob, name = 'My Voice') {
@@ -23,7 +32,7 @@ export async function cloneVoice(apiKey, audioBlob, name = 'My Voice') {
 
   const res = await fetch(`${BASE}/voices/add`, {
     method: 'POST',
-    headers: { 'xi-api-key': apiKey },
+    headers: authHeaders(apiKey),
     body: form,
   })
 
@@ -45,7 +54,7 @@ export async function textToSpeech(apiKey, voiceId, text) {
   const res = await fetch(`${BASE}/text-to-speech/${voiceId}`, {
     method: 'POST',
     headers: {
-      'xi-api-key': apiKey,
+      ...authHeaders(apiKey),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
